@@ -61,6 +61,7 @@ def submit(doesnothing):    #i had to put a dummy parameter because enter was bo
     NoteEntry.delete(1.0, END)
     UTCEntry.focus()
 
+    printLogs(c)
     # Commit changes
     conn.commit()
 
@@ -68,20 +69,7 @@ def submit(doesnothing):    #i had to put a dummy parameter because enter was bo
     conn.close()
 
 
-def openRecords():
-    def delete():
-        conn = sqlite3.connect('logs.db')
-        c = conn.cursor()
-
-        # Delete a record
-        c.execute("DELETE from logs WHERE oid= " + oid_box.get())
-        #TODO: Provide some confrimation that the entry Deleted
-        query_label.delete(1.0, END)
-        printLogs(c)
-        conn.commit()
-        conn.close()
-
-    def update(doesnothing):
+def update(doesnothing):
         conn = sqlite3.connect('logs.db')
         c = conn.cursor()
 
@@ -114,105 +102,128 @@ def openRecords():
         conn.close()
 
         editor.destroy()
+
+def printLogs(c):
+    # Query the database
+    c.execute("SELECT *, oid FROM logs ORDER BY utc ASC;")
+    records = c.fetchall()
+
+    # Loop through results
+    print_records =  ''
+    for record in reversed(records):
+        print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
+    query_label.insert(tk.INSERT, print_records)
+
+
+def modify():
+    global editor
+    editor = Tk()
+    editor.title('Edit an entry')
+
+    editor.bind('<Return>', update)
+
+    conn = sqlite3.connect('logs.db')
+    c = conn.cursor()
+
+    record_id = oid_box.get()
+
+    # Query the database
+    c.execute("SELECT * FROM logs WHERE oid = " + record_id)
+    records = c.fetchall()
+
+    # Select record to modify
+    
+    # Create Global Variables for text box names
+    global DOYEntry_editor
+    global UTCEntry_editor
+    global DSSEntry_editor
+    global SCEntry_editor
+    global EntType_editor
+    global NoteEntry_editor
+    
+    ##################  Edit GUI   #######################
+    # DOY
+    DOYLabel_editor = Label(editor, text="DOY")
+    DOYEntry_editor = Entry(editor)
+
+    # UTC
+    UTCValue_editor = StringVar(editor)
+    UTCValue_editor.trace('w', limitSizeUTC)
+
+    UTCLabel_editor = Label(editor, text="UTC")
+    UTCEntry_editor = Entry(editor, textvariable=UTCValue)
+
+    #DSS
+    DSSValue_editor = StringVar(editor)
+    DSSValue_editor.trace('w', limitSizeDSS)
+
+    DSSLabel_editor = Label(editor, text="DSS")
+    DSSEntry_editor = Entry(editor, textvariable=DSSValue_editor)
+
+    # SC
+    SCValue_editor = StringVar(editor)
+    SCValue_editor.trace('w', limitSizeSC)
+
+    SCLabel_editor = Label(editor, text="S/C")
+    SCEntry_editor = Entry(editor, textvariable=SCValue_editor)
+
+    # ENTType
+    EntType_editor = StringVar(editor)   #FIXME: If DR, FR or Proc is selected, should promt user to enter numeber
+    EntTypeLabel_editor = Label(editor, text="EntType")
+    EntTypeOptions = [ "Log", "DR", "FR", "Proc" ]
+    EntTypeDropdown_editor = OptionMenu(editor, EntType_editor, *EntTypeOptions)
+    EntType_editor.set(EntTypeOptions[0]) # default value = Log
+
+    # Note
+    NoteLabel_editor = Label(editor, text="Entry")
+    NoteEntry_editor = Text(editor, height=5 , width=90)
+
+    
+
+    #############    Placement   ##################
+    DOYLabel_editor.grid(row=0, column=0)
+    DOYEntry_editor.grid(row=1, column=0)
+
+    UTCLabel_editor.grid(row=0, column=1)
+    UTCEntry_editor.grid(row=1, column=1)
+    UTCEntry_editor.focus()
+
+    DSSLabel_editor.grid(row=0, column=2)
+    DSSEntry_editor.grid(row=1, column=2)
+
+    SCLabel_editor.grid(row=0, column=3)
+    SCEntry_editor.grid(row=1, column=3)
+
+    EntTypeLabel_editor.grid(row=0, column=4)
+    EntTypeDropdown_editor.grid(row=1, column=4)
+
+    NoteLabel_editor.grid(row=2, columnspan=5)
+    NoteEntry_editor.grid(row=3, columnspan=5)
+
+    for record in records:
+        DOYEntry_editor.insert(0, record[0])
+        UTCEntry_editor.insert(0, record[1])
+        DSSEntry_editor.insert(0, record[2])
+        SCEntry_editor.insert(0, record[3])
+        EntType_editor.set(record[4])
+        NoteEntry_editor.insert(1.0, record[5])
+
+
+def delete():
+    conn = sqlite3.connect('logs.db')
+    c = conn.cursor()
+
+    # Delete a record
+    c.execute("DELETE from logs WHERE oid= " + oid_box.get())
+    #TODO: Provide some confrimation that the entry Deleted
+    query_label.delete(1.0, END)
+    printLogs(c)
+    conn.commit()
+    conn.close()
         
 
 
-    def modify():
-        global editor
-        editor = Tk()
-        editor.title('Edit an entry')
-
-        editor.bind('<Return>', update)
-
-        conn = sqlite3.connect('logs.db')
-        c = conn.cursor()
-
-        record_id = oid_box.get()
-
-        # Query the database
-        c.execute("SELECT * FROM logs WHERE oid = " + record_id)
-        records = c.fetchall()
-
-        # Select record to modify
-        
-        # Create Global Variables for text box names
-        global DOYEntry_editor
-        global UTCEntry_editor
-        global DSSEntry_editor
-        global SCEntry_editor
-        global EntType_editor
-        global NoteEntry_editor
-        
-        ##################  Edit GUI   #######################
-        # DOY
-        DOYLabel_editor = Label(editor, text="DOY")
-        DOYEntry_editor = Entry(editor)
-
-        # UTC
-        UTCValue_editor = StringVar(editor)
-        UTCValue_editor.trace('w', limitSizeUTC)
-
-        UTCLabel_editor = Label(editor, text="UTC")
-        UTCEntry_editor = Entry(editor, textvariable=UTCValue)
-
-        #DSS
-        DSSValue_editor = StringVar(editor)
-        DSSValue_editor.trace('w', limitSizeDSS)
-
-        DSSLabel_editor = Label(editor, text="DSS")
-        DSSEntry_editor = Entry(editor, textvariable=DSSValue_editor)
-
-        # SC
-        SCValue_editor = StringVar(editor)
-        SCValue_editor.trace('w', limitSizeSC)
-
-        SCLabel_editor = Label(editor, text="S/C")
-        SCEntry_editor = Entry(editor, textvariable=SCValue_editor)
-
-        # ENTType
-        EntType_editor = StringVar(editor)   #FIXME: If DR, FR or Proc is selected, should promt user to enter numeber
-        EntTypeLabel_editor = Label(editor, text="EntType")
-        EntTypeOptions = [ "Log", "DR", "FR", "Proc" ]
-        EntTypeDropdown_editor = OptionMenu(editor, EntType_editor, *EntTypeOptions)
-        EntType_editor.set(EntTypeOptions[0]) # default value = Log
-
-        # Note
-        NoteLabel_editor = Label(editor, text="Entry")
-        NoteEntry_editor = Text(editor, height=5 , width=90)
-
-        
-
-        #############    Placement   ##################
-        DOYLabel_editor.grid(row=0, column=0)
-        DOYEntry_editor.grid(row=1, column=0)
-
-        UTCLabel_editor.grid(row=0, column=1)
-        UTCEntry_editor.grid(row=1, column=1)
-        UTCEntry_editor.focus()
-
-        DSSLabel_editor.grid(row=0, column=2)
-        DSSEntry_editor.grid(row=1, column=2)
-
-        SCLabel_editor.grid(row=0, column=3)
-        SCEntry_editor.grid(row=1, column=3)
-
-        EntTypeLabel_editor.grid(row=0, column=4)
-        EntTypeDropdown_editor.grid(row=1, column=4)
-
-        NoteLabel_editor.grid(row=2, columnspan=5)
-        NoteEntry_editor.grid(row=3, columnspan=5)
-
-        for record in records:
-            DOYEntry_editor.insert(0, record[0])
-            UTCEntry_editor.insert(0, record[1])
-            DSSEntry_editor.insert(0, record[2])
-            SCEntry_editor.insert(0, record[3])
-            EntType_editor.set(record[4])
-            NoteEntry_editor.insert(1.0, record[5])
-
-
-        
-
+def openRecords():
     recordWindow = Toplevel(root)
 
     recordWindow.title("Manage Records")
@@ -220,24 +231,13 @@ def openRecords():
     c = conn.cursor()
 
 
-
+    global query_label
     query_label = tkst.ScrolledText(
         master = recordWindow,
         wrap = tk.WORD,
         width = 70,
         height = 20
     )
-
-    def printLogs(c):
-        # Query the database
-        c.execute("SELECT *, oid FROM logs")
-        records = c.fetchall()
-
-        # Loop through results
-        print_records =  ''
-        for record in records:
-            print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
-        query_label.insert(tk.INSERT, print_records)
                 
     printLogs(c)
 
@@ -248,6 +248,7 @@ def openRecords():
     modify_btn = Button(recordWindow, text="Modify", command=modify)
     
     oid_label = Label(recordWindow, text="ID")
+    global oid_box
     oid_box = Entry(recordWindow, width=5)
 
     query_label.pack(padx=10, pady=10, fill=tk.BOTH ,expand=False)
@@ -259,11 +260,6 @@ def openRecords():
 
     conn.commit()
     conn.close()
-
-
-    
-
-
 
 
 ##################  TK GUI   #######################
