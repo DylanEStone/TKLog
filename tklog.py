@@ -6,11 +6,8 @@ import tkinter.messagebox
 import sqlite3
 
 #TODO: Print by day Functionality
-#TODO: Add modify functionality to records page
-#TODO: Adjust DOY value change days at the correct UTC time (I believe it shows PST DOY right now)
 #TODO: Edit database to accomodate for DR#
 #TODO: If DR is selected, when enter is hit, prompt user for DR#
-#TODO: Add last Entry Functionality, so it displays the last entered log on the main screen.
 
 root = Tk()
 root.title("TK LOG")
@@ -34,41 +31,7 @@ CREATE TABLE IF NOT EXISTS logs (
     note text
 )
 """)
-
 # TODO: On submit, copy submitted fields to last comment field (Like SFOCLOG DOES)
-def submit(doesnothing):    #i had to put a dummy parameter because enter was bound to submit... I am not sure why but it is ok
-    
-    conn = sqlite3.connect('logs.db')
-    c = conn.cursor()
-    
-    # Insert into table
-    c.execute("INSERT INTO logs VALUES (:doyentry, :utcentry, :dssentry, :scentry, :enttype, :note)",
-            {
-                'doyentry': DOYEntry.get(),
-                'utcentry': UTCEntry.get(),
-                'dssentry': DSSEntry.get(),
-                'scentry': SCEntry.get(),
-                'enttype': EntType.get(),
-                'note': NoteEntry.get("1.0", 'end')
-            })
-
-    # Clear the text Boxes
-    DOYEntry.delete(0, END)
-    DOYEntry.insert(0, day_of_year)
-    UTCEntry.delete(0, END)
-    DSSEntry.delete(0, END)
-    SCEntry.delete(0, END)
-    NoteEntry.delete(1.0, END)
-    UTCEntry.focus()
-
-    printLogs(c)
-    # Commit changes
-    conn.commit()
-
-    # Close Connection
-    conn.close()
-
-
 def update(doesnothing):
         conn = sqlite3.connect('logs.db')
         c = conn.cursor()
@@ -99,21 +62,10 @@ def update(doesnothing):
         conn.commit()
         query_label.delete(1.0, END)
         printLogs(c)
+        get_last_entries()
         conn.close()
 
         editor.destroy()
-
-def printLogs(c):
-    # Query the database
-    c.execute("SELECT *, oid FROM logs ORDER BY utc ASC;")
-    records = c.fetchall()
-
-    # Loop through results
-    print_records =  ''
-    for record in reversed(records):
-        print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
-    query_label.insert(tk.INSERT, print_records)
-
 
 def modify():
     global editor
@@ -209,16 +161,51 @@ def modify():
         NoteEntry_editor.insert(1.0, record[5])
 
 
+
 def delete():
     conn = sqlite3.connect('logs.db')
     c = conn.cursor()
 
     # Delete a record
     c.execute("DELETE from logs WHERE oid= " + oid_box.get())
-    #TODO: Provide some confrimation that the entry Deleted
     query_label.delete(1.0, END)
-    printLogs(c)
     conn.commit()
+    printLogs(c)
+    get_last_entries()
+    conn.close()
+
+
+def submit(doesnothing):    #i had to put a dummy parameter because enter was bound to submit... I am not sure why but it is ok
+    
+    conn = sqlite3.connect('logs.db')
+    c = conn.cursor()
+    
+    # Insert into table
+    c.execute("INSERT INTO logs VALUES (:doyentry, :utcentry, :dssentry, :scentry, :enttype, :note)",
+            {
+                'doyentry': DOYEntry.get(),
+                'utcentry': UTCEntry.get(),
+                'dssentry': DSSEntry.get(),
+                'scentry': SCEntry.get(),
+                'enttype': EntType.get(),
+                'note': NoteEntry.get("1.0", 'end')
+            })
+
+    # Clear the text Boxes
+    DOYEntry.delete(0, END)
+    DOYEntry.insert(0, day_of_year)
+    UTCEntry.delete(0, END)
+    DSSEntry.delete(0, END)
+    SCEntry.delete(0, END)
+    NoteEntry.delete(1.0, END)
+    UTCEntry.focus()
+
+    #printLogs(c)
+    # Commit changes
+    conn.commit()
+    get_last_entries()
+
+    # Close Connection
     conn.close()
         
 
@@ -261,6 +248,17 @@ def openRecords():
     conn.commit()
     conn.close()
 
+def printLogs(c):
+    # Query the database
+    c.execute("SELECT *, oid FROM logs ORDER BY utc ASC;")
+    records = c.fetchall()
+
+    # Loop through results
+    print_records =  ''
+    for record in reversed(records):
+        print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
+    query_label.insert(tk.INSERT, print_records)
+
 
 ##################  TK GUI   #######################
 # DOY
@@ -291,6 +289,67 @@ DSSValue.trace('w', limitSizeDSS)
 DSSLabel = Label(root, text="DSS")
 DSSEntry = Entry(root, textvariable=DSSValue)
 
+
+#############  Last Entry UI ###############
+def get_last_entries():
+    global LastDOY
+    global LastUTC
+    global LastDSS
+    global LastSC
+    global LastEnt
+    global LastEntry
+
+    conn = sqlite3.connect('logs.db')
+    c = conn.cursor()
+
+    # Query the database
+    c.execute("SELECT doy, MAX(utc), dss, sc, enttype, note AS MostRecent FROM logs")
+    r = c.fetchall()
+    LastDOY = r[0][0]
+    LastUTC = r[0][1]
+    LastDSS = r[0][2]
+    LastSC = r[0][3]
+    LastEnt = r[0][4]
+    LastEntry = r[0][5]
+
+    LastDOYEntry = Label(root, text=LastDOY, bg="white")
+    LastUTCEntry = Label(root, text=LastUTC, bg="white")
+    LastDSSEntry = Label(root, text=LastDSS, bg="white")
+    LastSCEntry = Label(root, text=LastSC, bg="white")
+    LastEntEntry = Label(root, text=LastEnt, bg="white")
+    LastEntryEntry = Label(root, text=LastEntry, bg="white", height=5, width=90, justify=LEFT)
+
+    LastDOYEntry.grid(row=1, column=0)
+    LastUTCEntry.grid(row=1, column=1)
+    LastDSSEntry.grid(row=1, column=2)
+    LastSCEntry.grid(row=1, column=3)
+    LastEntEntry.grid(row=1, column=4)
+    LastEntryEntry.grid(row=3, columnspan=5, pady=(5, 5))
+
+    conn.commit()
+    conn.close()
+
+get_last_entries()
+
+LastDOYLabel = Label(root, text="DOY")
+LastDOYEntry = Label(root, text=LastDOY, bg="white")
+
+LastUTCLabel = Label(root, text="UTC")
+LastUTCEntry = Label(root, text=LastUTC, bg="white")
+
+LastDSSLabel = Label(root, text="DSS")
+LastDSSEntry = Label(root, text=LastDSS, bg="white")
+
+LastSCLabel = Label(root, text="S/C")
+LastSCEntry = Label(root, text=LastSC, bg="white")
+
+LastEntLabel = Label(root, text="Ent")
+LastEntEntry = Label(root, text=LastEnt, bg="white")
+
+LastEntryLabel = Label(root, text="Entry")
+LastEntryEntry = Label(root, text=LastEntry, bg="white", height=5, width=90, justify=LEFT)
+
+get_last_entries()
 # SC
 def limitSizeSC(*args):
     value = SCValue.get()
@@ -318,28 +377,46 @@ NoteEntry = Text(root, height=5 , width=90)
 query_btn = Button(root, text="Show Records", command=openRecords)
 
 
+## Last Entry Gridding
+LastDOYLabel.grid(row=0, column=0)
+LastDOYEntry.grid(row=1, column=0)
 
+LastUTCLabel.grid(row=0, column=1)
+LastUTCEntry.grid(row=1, column=1)
 
-DOYLabel.grid(row=0, column=0)
-DOYEntry.grid(row=1, column=0)
+LastDSSLabel.grid(row=0, column=2)
+LastDSSEntry.grid(row=1, column=2)
 
-UTCLabel.grid(row=0, column=1)
-UTCEntry.grid(row=1, column=1)
+LastSCLabel.grid(row=0, column=3)
+LastSCEntry.grid(row=1, column=3)
+
+LastEntLabel.grid(row=0, column=4)
+LastEntEntry.grid(row=1, column=4)
+
+LastEntryLabel.grid(row=2, columnspan=5)
+LastEntryEntry.grid(row=3, columnspan=5, pady=(5, 5))
+
+## Current Entry Gridding
+DOYLabel.grid(row=4, column=0)
+DOYEntry.grid(row=5, column=0)
+
+UTCLabel.grid(row=4, column=1)
+UTCEntry.grid(row=5, column=1)
 UTCEntry.focus()
 
-DSSLabel.grid(row=0, column=2)
-DSSEntry.grid(row=1, column=2)
+DSSLabel.grid(row=4, column=2)
+DSSEntry.grid(row=5, column=2)
 
-SCLabel.grid(row=0, column=3)
-SCEntry.grid(row=1, column=3)
+SCLabel.grid(row=4, column=3)
+SCEntry.grid(row=5, column=3)
 
-EntTypeLabel.grid(row=0, column=4)
-EntTypeDropdown.grid(row=1, column=4)
+EntTypeLabel.grid(row=4, column=4)
+EntTypeDropdown.grid(row=5, column=4)
 
-NoteLabel.grid(row=2, columnspan=5)
-NoteEntry.grid(row=3, columnspan=5)
+NoteLabel.grid(row=6, columnspan=5)
+NoteEntry.grid(row=7, columnspan=5)
 
-query_btn.grid(row = 4, columnspan=5, pady = (5, 5))
+query_btn.grid(row = 8, columnspan=5, pady = (5, 5))
 
 
 # Binds Enter key to submit Log
