@@ -69,9 +69,6 @@ def submit(doesnothing):    #i had to put a dummy parameter because enter was bo
 
 
 def openRecords():
-
-
-    
     def delete():
         conn = sqlite3.connect('logs.db')
         c = conn.cursor()
@@ -271,7 +268,7 @@ def openRecords():
 
 ##################  TK GUI   #######################
 # DOY
-day_of_year = str(datetime.now().timetuple().tm_yday) #FIXME: convert to UTC
+day_of_year = str(datetime.utcnow().timetuple().tm_yday)
 DOYLabel = Label(root, text="DOY")
 DOYEntry = Entry(root)
 DOYEntry.insert(0, day_of_year)
