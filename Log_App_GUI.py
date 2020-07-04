@@ -7,9 +7,10 @@ import sqlite3
 
 #TODO: Print by day Functionality
 #TODO: Add modify functionality to records page
-#TODO: Adjust DOY value change days at the correct UTC time
+#TODO: Adjust DOY value change days at the correct UTC time (I believe it shows PST DOY right now)
 #TODO: Edit database to accomodate for DR#
 #TODO: If DR is selected, when enter is hit, prompt user for DR#
+#TODO: Add last Entry Functionality, so it displays the last entered log on the main screen.
 
 root = Tk()
 root.title("TK LOG")
@@ -80,9 +81,17 @@ def openRecords():
 
         # Delete a record
         c.execute("DELETE from logs WHERE oid= " + oid_box.get())
-        #TODO: Provide some confrimation that the delete worked
+        #TODO: Provide some confrimation that the entry Deleted
+        query_label.delete(1.0, END)
+        printLogs(c)
         conn.commit()
         conn.close()
+
+    def modify():
+        conn = sqlite3.connect('logs.db')
+        c = conn.cursor()
+
+        
 
     recordWindow = Toplevel(root)
 
@@ -90,15 +99,7 @@ def openRecords():
     conn = sqlite3.connect('logs.db')
     c = conn.cursor()
 
-    # Query the database
-    c.execute("SELECT *, oid FROM logs")
-    records = c.fetchall()
-    print(records)
 
-    # Loop through results
-    print_records =  ''
-    for record in records:
-        print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
 
     query_label = tkst.ScrolledText(
         master = recordWindow,
@@ -106,6 +107,19 @@ def openRecords():
         width = 70,
         height = 20
     )
+
+    def printLogs(c):
+        # Query the database
+        c.execute("SELECT *, oid FROM logs")
+        records = c.fetchall()
+
+        # Loop through results
+        print_records =  ''
+        for record in records:
+            print_records += "DOY: " + str(record[0]) + "\t\tUTC: " + str(record[1]) + "\t\tDSS: " + str(record[2]) + "\t\tS/C: " + str(record[3]) + "\t\tID: " + str(record[6]) + "\nLog: " + str(record[5]) + "\n\n"
+        query_label.insert(tk.INSERT, print_records)
+                
+    printLogs(c)
 
     # Delete Button
     delete_btn = Button(recordWindow, text="Delete", command=delete)
@@ -122,7 +136,6 @@ def openRecords():
     modify_btn.pack(side=RIGHT)
     delete_btn.pack(side=RIGHT)
 
-    query_label.insert(tk.INSERT, print_records)
 
     conn.commit()
     conn.close()
@@ -135,7 +148,7 @@ def openRecords():
 
 ##################  TK GUI   #######################
 # DOY
-day_of_year = str(datetime.now().timetuple().tm_yday)
+day_of_year = str(datetime.now().timetuple().tm_yday) #FIXME: convert to UTC
 DOYLabel = Label(root, text="DOY")
 DOYEntry = Entry(root)
 DOYEntry.insert(0, day_of_year)
@@ -174,7 +187,7 @@ SCLabel = Label(root, text="S/C")
 SCEntry = Entry(root, textvariable=SCValue)
 
 # ENTType
-EntType = StringVar(root)
+EntType = StringVar(root)   #FIXME: If DR, FR or Proc is selected, should promt user to enter numeber
 EntTypeLabel = Label(root, text="EntType")
 EntTypeOptions = [ "Log", "DR", "FR", "Proc" ]
 EntTypeDropdown = OptionMenu(root, EntType, *EntTypeOptions)
