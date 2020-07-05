@@ -1,4 +1,5 @@
 from tkinter import *
+import datetime
 from datetime import datetime
 import tkinter as tk
 import tkinter.scrolledtext as tkst
@@ -31,7 +32,6 @@ CREATE TABLE IF NOT EXISTS logs (
     note text
 )
 """)
-# TODO: On submit, copy submitted fields to last comment field (Like SFOCLOG DOES)
 def update(doesnothing):
         conn = sqlite3.connect('logs.db')
         c = conn.cursor()
@@ -228,11 +228,14 @@ def openRecords():
                 
     printLogs(c)
 
+    # Print Button
+    print_btn = Button(recordWindow, text="Print (DOY)", command=printDay)
+
     # Delete Button
-    delete_btn = Button(recordWindow, text="Delete", command=delete)
+    delete_btn = Button(recordWindow, text="Delete (ID)", command=delete)
 
     # Modify Button
-    modify_btn = Button(recordWindow, text="Modify", command=modify)
+    modify_btn = Button(recordWindow, text="Modify (ID)", command=modify)
     
     oid_label = Label(recordWindow, text="ID")
     global oid_box
@@ -241,6 +244,7 @@ def openRecords():
     query_label.pack(padx=10, pady=10, fill=tk.BOTH ,expand=False)
     oid_box.pack(side=RIGHT, padx=10)
     oid_label.pack(side=RIGHT, padx=10, pady=10)
+    print_btn.pack(side=RIGHT)
     modify_btn.pack(side=RIGHT)
     delete_btn.pack(side=RIGHT)
 
@@ -328,6 +332,30 @@ def get_last_entries():
 
     conn.commit()
     conn.close()
+
+def printDay():
+
+    conn = sqlite3.connect('logs.db')
+    c = conn.cursor()
+
+    now = datetime.now()
+    record_id = oid_box.get()
+    title = "Printlog" + str(now.year) + "_" + record_id
+
+    print(title)
+    c.execute("SELECT * FROM logs WHERE doy = " + record_id + " ORDER BY utc DESC")
+    records = c.fetchall()
+    outF = open(title, "w")
+    outF.write("UTC\tDSS\tS/C\tType\tEntry\n")
+    
+    for record in records:
+        outF.write(record[1] + "\t"  +record[2] + "\t"  +record[3] + "\t"  +record[4] + "\t"  +record[5])
+    
+    outF.close()
+
+    conn.commit()
+    conn.close()
+
 
 get_last_entries()
 
