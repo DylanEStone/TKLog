@@ -6,9 +6,11 @@ import tkinter.scrolledtext as tkst
 import tkinter.messagebox
 import sqlite3
 
-#TODO: Print by day Functionality
 #TODO: Edit database to accomodate for DR#
 #TODO: If DR is selected, when enter is hit, prompt user for DR#
+#TODO: Fix lastentry query (top part main menu) to account for doy
+#TODO: Add a timer to check for database changes and update GUI in case partner types entry
+#TODO: Entry Validation
 
 root = Tk()
 root.title("TK LOG")
