@@ -5,7 +5,8 @@
 ************************      |  | |    <|  |_(  <_> ) /_/  >     **************************
 ************************      |__| |__|_ \____/\____/\___  /      **************************
 ************************                \/          /_____/       **************************
-********************************************************************************************   
+********************************************************************************************
+
 TKlog aims to be functionally identical to tklist. It features some minor changes that I
 believe improve the quality of life for the user. This app was developed using Python 3.8.3
 with dependencies including tkinter, datetime, and sqlite3. I realized after I began 
