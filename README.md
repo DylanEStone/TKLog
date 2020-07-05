@@ -1,17 +1,8 @@
-
-*******************       __   __   .__                      *********************
-*******************     _/  |_|  | _|  |   ____   ____       *********************
- ******************     \   __\  |/ /  |  /  _ \ / ___\      ********************
-    ***************      |  | |    <|  |_(  <_> ) /_/  >     *****************
-       ************      |__| |__|_ \____/\____/\___  /      **************
-          *********                \/          /_____/       ***********
-
+*TkLog
 
 TKlog aims to be functionally identical to tklist. It features some minor changes that I
 believe improve the quality of life for the user. This app was developed using Python 3.8.3
-with dependencies including tkinter, datetime, and sqlite3. I realized after I began 
-development that we have Python 2.7.5 installed on smc3 at the moment, but hopefully we can
-upgrade, otherwise I can tweak the application to work on smc3's version.
+with dependencies including tkinter, datetime, and sqlite3.
 
 After executing the script you should be greeted with a screen that looks similar to 
 sfoclog. Fields are navigated by tabbing over, or by clicking/highlighting previous boxes.
