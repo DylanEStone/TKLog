@@ -1,4 +1,4 @@
-*TkLog
+# TkLog
 
 TKlog aims to be functionally identical to tklist. It features some minor changes that I
 believe improve the quality of life for the user. This app was developed using Python 3.8.3
